@@ -63,7 +63,7 @@
     return [self toHex:hashKeyData];
 }
 
-+ (NSData *) AES256CBC: (NSString *)operation data: (NSData *)data key: (NSString *)key iv: (NSString *)iv {
++ (NSData *) AES128CBC: (NSString *)operation data: (NSData *)data key: (NSString *)key iv: (NSString *)iv {
     //convert hex string to hex data
     NSData *keyData = [self fromHex:key];
     NSData *ivData = [self fromHex:iv];
@@ -76,8 +76,8 @@
                                           [operation isEqualToString:@"encrypt"] ? kCCEncrypt : kCCDecrypt,
                                           kCCAlgorithmAES128,
                                           kCCOptionPKCS7Padding,
-                                          keyData.bytes, kCCKeySizeAES256,
-                                          ivData.length ? ivData.bytes : nil,
+                                          keyData.bytes, kCCKeySizeAES128,
+                                          ivData.bytes,
                                           data.bytes, data.length,
                                           buffer.mutableBytes,  buffer.length,
                                           &numBytes);
@@ -91,13 +91,14 @@
 }
 
 + (NSString *) encrypt: (NSString *)clearText key: (NSString *)key iv: (NSString *)iv {
-    NSData *result = [self AES256CBC:@"encrypt" data:[clearText dataUsingEncoding:NSUTF8StringEncoding] key:key iv:iv];
+    NSData *data = [[NSData alloc] initWithBase64EncodedString:clearText options:0];
+    NSData *result = [self AES128CBC:@"encrypt" data:data key:key iv:iv];
     return [result base64EncodedStringWithOptions:0];
 }
 
 + (NSString *) decrypt: (NSString *)cipherText key: (NSString *)key iv: (NSString *)iv {
-    NSData *result = [self AES256CBC:@"decrypt" data:[[NSData alloc] initWithBase64EncodedString:cipherText options:0] key:key iv:iv];
-    return [[NSString alloc] initWithData:result encoding:NSUTF8StringEncoding];
+    NSData *result = [self AES128CBC:@"decrypt" data:[[NSData alloc] initWithBase64EncodedString:cipherText options:0] key:key iv:iv];
+    return [result base64EncodedStringWithOptions:0];
 }
 
 + (NSString *) hmac256: (NSString *)input key: (NSString *)key {
